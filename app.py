@@ -269,7 +269,7 @@ if uploaded_file:
                 else:
                     loading_msg = "👑 Sourcing the finest ingredients for your ascension..."
                 with st.spinner(loading_msg):
-                    import time; time.sleep(2)
+                    import time; time.sleep(5)
                 full_text = st.write_stream(recipe_stream(ingredients, mode))
                 st.session_state.recipe_text = full_text
             else:
