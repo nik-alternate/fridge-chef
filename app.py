@@ -28,16 +28,6 @@ st.markdown("""
     font-size: 0.88em;
     font-weight: 500;
 }
-.section-broke {
-    border-left: 4px solid #e74c3c;
-    padding-left: 12px;
-    margin-bottom: 8px;
-}
-.section-alpha {
-    border-left: 4px solid #f39c12;
-    padding-left: 12px;
-    margin-bottom: 8px;
-}
 </style>
 """, unsafe_allow_html=True)
 
@@ -45,12 +35,10 @@ st.markdown("""
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def get_client() -> anthropic.Anthropic:
-    # Streamlit Cloud uses st.secrets; local dev uses .env
     try:
         api_key = st.secrets["ANTHROPIC_API_KEY"]
     except (KeyError, FileNotFoundError):
         api_key = os.getenv("ANTHROPIC_API_KEY")
-
     if not api_key:
         st.error("❌ ANTHROPIC_API_KEY not found. Add it to your .env (local) or Streamlit secrets (cloud).")
         st.stop()
@@ -58,10 +46,8 @@ def get_client() -> anthropic.Anthropic:
 
 
 def identify_ingredients(image_bytes: bytes, media_type: str) -> list[str]:
-    """Send image to Claude and return a list of detected ingredient strings."""
     client = get_client()
     image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
-
     response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=512,
@@ -70,103 +56,95 @@ def identify_ingredients(image_bytes: bytes, media_type: str) -> list[str]:
             "content": [
                 {
                     "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": media_type,
-                        "data": image_b64,
-                    },
+                    "source": {"type": "base64", "media_type": media_type, "data": image_b64},
                 },
                 {
                     "type": "text",
                     "text": (
                         "Look at this photo of someone's fridge or groceries. "
                         "List every food item and ingredient you can see. "
-                        'Return ONLY a JSON array of strings, for example: '
-                        '["chicken breast", "eggs", "butter", "garlic", "onion"]. '
+                        'Return ONLY a JSON array of strings, e.g.: '
+                        '["chicken breast", "eggs", "butter", "garlic"]. '
                         "Just the JSON array — no explanation, no markdown."
                     ),
                 },
             ],
         }],
     )
-
     raw = response.content[0].text.strip()
-
-    # Strip markdown code fences if Claude wrapped it
     if "```" in raw:
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
         raw = raw.strip()
-
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
-        # Fallback: best-effort parse
         return [item.strip(' "\'') for item in raw.strip("[]").split(",") if item.strip()]
 
 
-def recipe_stream(ingredients: list[str]):
-    """
-    Generator that streams the recipe text from Claude.
-    Yields string chunks so Streamlit's st.write_stream can consume it.
-    """
+def recipe_stream(ingredients: list[str], mode: str):
+    """Stream a single recipe (broke or alpha) based on mode."""
     client = get_client()
-    ingredients_line = ", ".join(ingredients)
+    ingredients_str = ", ".join(ingredients)
 
     system_msg = (
         "You are a brutally funny but genuinely helpful chef. "
-        "Your job is to give real, delicious recipes — but with personality. "
+        "Give real, delicious recipes with personality. "
         "Never break character. Always be fun, a little roast-y, and actually useful."
     )
 
-    user_msg = (
-        "The user just scanned their fridge. Here is what they have:\n\n"
-        f"**{ingredients_line}**\n\n"
-        "Generate TWO full recipes. Each recipe should use MOST of what they already have, "
-        "but can suggest up to 5 extra ingredients to buy. The food should actually taste great.\n\n"
-        "Use this EXACT format — no deviations:\n\n"
-        "---\n"
-        "## 💸 BROKE BITCH MODE\n\n"
-        "### [Recipe Name]\n\n"
-        "*[1–2 sentence funny description of the vibe and why broke people make this]*\n\n"
-        "**✅ What you already have:**\n"
-        "- [ingredient from their list]\n"
-        "- [ingredient from their list]\n\n"
-        "**🛒 What you need to buy:**\n"
-        "- [budget item] — ~$[price]\n"
-        "  *(Choose cheap proteins: chicken thigh, tilapia, ground beef, eggs, canned tuna, etc.)*\n\n"
-        "**👨‍🍳 How to make it (4–6 steps):**\n"
-        "1. [step]\n"
-        "2. [step]\n\n"
-        "**🔥 The verdict:** [One snarky sentence about why this actually slaps despite costing $8]\n\n"
-        "---\n"
-        "## 👑 ALPHA CHAD MODE\n\n"
-        "### [Recipe Name]\n\n"
-        "*[1–2 sentence funny description of the bougie vibe — aspirational, a little absurd]*\n\n"
-        "**✅ What you already have:**\n"
-        "- [ingredient from their list]\n"
-        "- [ingredient from their list]\n\n"
-        "**🛒 What you need to buy:**\n"
-        "- [REQUIRED: one premium protein — wagyu beef, filet mignon, lobster tail, king crab legs, or prime ribeye] — ~$[price]\n"
-        "- [other premium or specialty ingredients] — ~$[price]\n\n"
-        "**👨‍🍳 How to make it (4–6 steps, sounds fancy):**\n"
-        "1. [step]\n"
-        "2. [step]\n\n"
-        "**💎 The verdict:** [One sentence about why real ones eat like this]\n\n"
-        "---\n"
-        "## 🛒 YOUR SHOPPING LIST\n\n"
-        "**Broke Bitch run (~$[total range]):**\n"
-        "- [ ] [item] — ~$[price]\n\n"
-        "**Alpha Chad haul (~$[total range]):**\n"
-        "- [ ] [item] — ~$[price]\n\n"
-        "---\n\n"
-        "Keep the energy fun. Make the food genuinely good. These are real meals real people would cook."
-    )
+    if mode == "broke":
+        user_msg = (
+            f"The user has these ingredients: {ingredients_str}\n\n"
+            "Generate ONE budget recipe. Use most of what they have, "
+            "suggest up to 5 cheap additions (chicken thigh, tilapia, ground beef, eggs, canned beans, etc.).\n\n"
+            "Use this EXACT format:\n\n"
+            "## 💸 BROKE BITCH BOY BUDGET\n\n"
+            "### [Recipe Name]\n\n"
+            "*[1–2 sentence funny description — why broke people make this and why it actually hits]*\n\n"
+            "**✅ What you already have:**\n"
+            "- [ingredient from their list]\n\n"
+            "**🛒 What you need to buy:**\n"
+            "- [budget item] — ~$[price]\n\n"
+            "**👨‍🍳 How to make it:**\n"
+            "1. [step]\n"
+            "2. [step]\n"
+            "(4–6 steps total)\n\n"
+            "**🔥 The verdict:** [One snarky sentence about why this slaps despite costing $8]\n\n"
+            "---\n"
+            "## 🛒 YOUR SHOPPING LIST (~$[total estimate])\n"
+            "- [ ] [item] — ~$[price]\n\n"
+            "Keep it fun and make the food genuinely good."
+        )
+    else:
+        user_msg = (
+            f"The user has these ingredients: {ingredients_str}\n\n"
+            "Generate ONE premium recipe. Use most of what they have. "
+            "MUST include at least one of: wagyu beef, filet mignon, lobster tail, king crab legs, or prime ribeye.\n\n"
+            "Use this EXACT format:\n\n"
+            "## 👑 ALPHA CHAD FEAST\n\n"
+            "### [Recipe Name]\n\n"
+            "*[1–2 sentence funny bougie description — aspirational, a little absurd, makes them feel like a god]*\n\n"
+            "**✅ What you already have:**\n"
+            "- [ingredient from their list]\n\n"
+            "**🛒 What you need to buy:**\n"
+            "- [REQUIRED premium protein: wagyu, filet mignon, lobster tail, king crab, or prime ribeye] — ~$[price]\n"
+            "- [other premium additions] — ~$[price]\n\n"
+            "**👨‍🍳 How to make it:**\n"
+            "1. [step]\n"
+            "2. [step]\n"
+            "(4–6 steps, sounds fancy)\n\n"
+            "**💎 The verdict:** [One sentence about why alphas eat like this]\n\n"
+            "---\n"
+            "## 🛒 YOUR SHOPPING LIST (~$[total estimate])\n"
+            "- [ ] [item] — ~$[price]\n\n"
+            "Keep it fun and make the food genuinely impressive."
+        )
 
     with client.messages.stream(
         model="claude-opus-4-6",
-        max_tokens=2500,
+        max_tokens=1500,
         system=system_msg,
         messages=[{"role": "user", "content": user_msg}],
     ) as stream:
@@ -177,7 +155,7 @@ def recipe_stream(ingredients: list[str]):
 # ── UI ────────────────────────────────────────────────────────────────────────
 
 st.title("🍳 FridgeChef")
-st.markdown("*Snap your fridge. Get two recipes. Know what to buy.*")
+st.markdown("*Snap your fridge. Choose your tier. Get cooking.*")
 st.divider()
 
 uploaded_file = st.file_uploader(
@@ -198,46 +176,84 @@ if uploaded_file:
         st.markdown("**🛒 Step 3** — Get your shopping list.")
         st.markdown("**🍽️ Step 4** — FEAST!")
         st.markdown("")
-
         go = st.button("🚀 Analyze My Fridge", type="primary", use_container_width=True)
 
+    # Reset state when Analyze is clicked
     if go:
-        image_bytes = uploaded_file.getvalue()
-        media_type = uploaded_file.type  # e.g. "image/jpeg"
+        st.session_state.ingredients = None
+        st.session_state.recipe_mode = None
+        st.session_state.recipe_text = None
+        st.session_state.image_bytes = uploaded_file.getvalue()
+        st.session_state.media_type = uploaded_file.type
 
+    # Show results if we have an analysis in progress or complete
+    if go or st.session_state.get("ingredients") is not None:
         st.divider()
 
-        # ── Step 1: Identify ingredients ─────────────────────────────────────
-        with st.spinner("🔍 Scanning your ingredients..."):
-            ingredients = identify_ingredients(image_bytes, media_type)
+        # ── Step 1: Identify ingredients (once, then cache) ──────────────────
+        if not st.session_state.get("ingredients"):
+            with st.spinner("🔍 Scanning your ingredients..."):
+                ingredients = identify_ingredients(
+                    st.session_state.image_bytes,
+                    st.session_state.media_type,
+                )
+            if not ingredients:
+                st.warning("Couldn't make out any ingredients. Try a brighter, closer photo!")
+                st.stop()
+            st.session_state.ingredients = ingredients
 
-        if not ingredients:
-            st.warning("Couldn't make out any ingredients clearly. Try a brighter, closer photo!")
-            st.stop()
+        ingredients = st.session_state.ingredients
 
         st.subheader("🥦 Ingredients I found:")
-        tags_html = "".join(
-            f'<span class="ingredient-tag">{ing}</span>' for ing in ingredients
-        )
+        tags_html = "".join(f'<span class="ingredient-tag">{ing}</span>' for ing in ingredients)
         st.markdown(tags_html, unsafe_allow_html=True)
         st.markdown("")
-
         st.divider()
 
-        # ── Step 2: Stream recipes ────────────────────────────────────────────
-        st.subheader("📋 Your Recipes")
+        # ── Step 2: Tier selection ────────────────────────────────────────────
+        if not st.session_state.get("recipe_mode"):
+            st.subheader("Choose your recipe tier:")
+            col_b, col_a = st.columns(2)
+            with col_b:
+                if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary"):
+                    st.session_state.recipe_mode = "broke"
+                    st.session_state.recipe_text = None
+                    st.rerun()
+            with col_a:
+                if st.button("👑 Alpha Chad Feast", use_container_width=True, type="primary"):
+                    st.session_state.recipe_mode = "alpha"
+                    st.session_state.recipe_text = None
+                    st.rerun()
 
-        with st.spinner("Cooking up your options..."):
-            st.write_stream(recipe_stream(ingredients))
+        # ── Step 3: Show recipe ───────────────────────────────────────────────
+        else:
+            mode = st.session_state.recipe_mode
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            st.subheader(f"Your recipe: {label}")
 
-        st.divider()
-        st.success("✅ Done! Screenshot your shopping list before you head out.")
+            # Stream if not yet generated, otherwise show cached text
+            if not st.session_state.get("recipe_text"):
+                full_text = st.write_stream(recipe_stream(ingredients, mode))
+                st.session_state.recipe_text = full_text
+            else:
+                st.markdown(st.session_state.recipe_text)
 
-        if st.button("📸 Scan Another Fridge"):
-            st.rerun()
+            st.divider()
+            st.success("✅ Done! Screenshot your shopping list before you head out.")
+
+            col_r1, col_r2 = st.columns(2)
+            with col_r1:
+                if st.button("🔄 Switch Tiers", use_container_width=True):
+                    st.session_state.recipe_mode = None
+                    st.session_state.recipe_text = None
+                    st.rerun()
+            with col_r2:
+                if st.button("📸 Scan Another Fridge", use_container_width=True):
+                    for key in ["ingredients", "recipe_mode", "recipe_text", "image_bytes", "media_type"]:
+                        st.session_state.pop(key, None)
+                    st.rerun()
 
 else:
-    # Landing state — explain the app before they upload
     st.markdown("### How it works")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
@@ -245,9 +261,9 @@ else:
     with c2:
         st.markdown("#### 🔍 Scan\nClaude AI reads the photo and identifies every ingredient it can see.")
     with c3:
-        st.markdown("#### 🍽️ Choose\nGet two recipes: one budget meal, one baller upgrade.")
+        st.markdown("#### 🍽️ Choose\nPick your tier: Broke Bitch budget or Alpha Chad feast.")
     with c4:
-        st.markdown("#### 🛒 Shop\nA checklist tells you exactly what to pick up for each option.")
+        st.markdown("#### 🛒 Shop\nGet a checklist of exactly what to pick up for your chosen meal.")
 
     st.markdown("")
     st.info("👆 Upload a photo above to get started.")
