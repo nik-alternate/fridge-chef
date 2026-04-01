@@ -4,12 +4,26 @@ import base64
 import json
 import os
 import io
+import random
 from PIL import Image
 import pillow_heif
 from dotenv import load_dotenv
 
 # Register HEIC/HEIF support with Pillow
 pillow_heif.register_heif_opener()
+
+BROKE_LOADING_MESSAGES = [
+    "🪙 Calculating a meal made of table scraps...",
+    "💸 Checking if you can even afford this...",
+    "🥲 Finding recipes that match your financial situation...",
+    "🛒 Searching the clearance aisle of the internet...",
+    "📉 Cross-referencing your budget with the poverty line...",
+    "🍳 Consulting the dollar store cookbook...",
+    "🥫 Dusting off the canned goods section...",
+    "💀 Assessing the damage in your fridge...",
+    "🤑 Stretching those dollars like Olympic athletes...",
+    "🧾 Checking if you qualify for this meal financially...",
+]
 
 load_dotenv()
 
@@ -250,6 +264,12 @@ if uploaded_file:
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
+                if mode == "broke":
+                    loading_msg = random.choice(BROKE_LOADING_MESSAGES)
+                else:
+                    loading_msg = "👑 Sourcing the finest ingredients for your ascension..."
+                with st.spinner(loading_msg):
+                    import time; time.sleep(2)
                 full_text = st.write_stream(recipe_stream(ingredients, mode))
                 st.session_state.recipe_text = full_text
             else:
