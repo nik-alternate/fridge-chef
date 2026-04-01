@@ -193,10 +193,10 @@ if uploaded_file:
 
     with col_cta:
         st.markdown("### Here's the plan:")
-        st.markdown("**🔍 Step 1** — Claude scans your photo and lists every ingredient")
-        st.markdown("**💸 Step 2** — You get the *Broke Bitch* recipe (budget, filling, actually good)")
-        st.markdown("**👑 Step 3** — You get the *Alpha Chad* upgrade (premium, aspirational, absurd)")
-        st.markdown("**🛒 Step 4** — A shopping list for each so you know exactly what to grab")
+        st.markdown("**🔍 Step 1** — We figure out what you got to work with.")
+        st.markdown("**💸 Step 2** — You decide how much of a baller you are.")
+        st.markdown("**🛒 Step 3** — Get your shopping list.")
+        st.markdown("**🍽️ Step 4** — FEAST!")
         st.markdown("")
 
         go = st.button("🚀 Analyze My Fridge", type="primary", use_container_width=True)
