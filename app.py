@@ -3,7 +3,13 @@ import anthropic
 import base64
 import json
 import os
+import io
+from PIL import Image
+import pillow_heif
 from dotenv import load_dotenv
+
+# Register HEIC/HEIF support with Pillow
+pillow_heif.register_heif_opener()
 
 load_dotenv()
 
@@ -45,8 +51,19 @@ def get_client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=api_key)
 
 
+def convert_to_jpeg(image_bytes: bytes, media_type: str) -> tuple[bytes, str]:
+    """Convert any image (including HEIC) to JPEG for Claude."""
+    if media_type in ("image/heic", "image/heif") or not media_type.startswith("image/"):
+        image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=90)
+        return buffer.getvalue(), "image/jpeg"
+    return image_bytes, media_type
+
+
 def identify_ingredients(image_bytes: bytes, media_type: str) -> list[str]:
     client = get_client()
+    image_bytes, media_type = convert_to_jpeg(image_bytes, media_type)
     image_b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
     response = client.messages.create(
         model="claude-opus-4-6",
@@ -160,7 +177,7 @@ st.divider()
 
 uploaded_file = st.file_uploader(
     "📸 Upload a photo of your fridge or groceries",
-    type=["jpg", "jpeg", "png", "webp"],
+    type=["jpg", "jpeg", "png", "webp", "heic", "heif"],
 )
 
 if uploaded_file:
