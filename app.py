@@ -9,7 +9,7 @@ load_dotenv()
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="FridgeChef",
+    page_title="Recipes and Groceries for Dumbdumbs",
     page_icon="🍳",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -154,8 +154,8 @@ def recipe_stream(ingredients: list[str], mode: str):
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 
-st.title("🍳 FridgeChef")
-st.markdown("*Snap your fridge. Choose your tier. Get cooking.*")
+st.title("🍳 Recipes and Groceries for Dumbdumbs")
+st.markdown("*Snap your food. Choose your tier. Buy crap. Get cooking.*")
 st.divider()
 
 uploaded_file = st.file_uploader(
@@ -257,13 +257,13 @@ else:
     st.markdown("### How it works")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.markdown("#### 📸 Snap\nTake a clear photo of your open fridge or lay your groceries on the counter.")
+        st.markdown("📸 **Snap**\n\nTake a clear photo of your open fridge or lay your groceries on the counter.")
     with c2:
-        st.markdown("#### 🔍 Scan\nClaude AI reads the photo and identifies every ingredient it can see.")
+        st.markdown("🔍 **Scan**\n\nClaude AI reads the photo and identifies every ingredient it can see.")
     with c3:
-        st.markdown("#### 🍽️ Choose\nPick your tier: Broke Bitch budget or Alpha Chad feast.")
+        st.markdown("🍽️ **Choose**\n\nPick your tier: Broke Bitch budget or Alpha Chad feast.")
     with c4:
-        st.markdown("#### 🛒 Shop\nGet a checklist of exactly what to pick up for your chosen meal.")
+        st.markdown("🛒 **Shop**\n\nGet a checklist of exactly what to pick up for your chosen meal.")
 
     st.markdown("")
     st.info("👆 Upload a photo above to get started.")
