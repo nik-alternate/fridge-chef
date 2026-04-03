@@ -233,8 +233,15 @@ def recipe_stream(ingredients: list[str], mode: str):
 
 # ── UI ────────────────────────────────────────────────────────────────────────
 
-st.title("🍳 Recipes and Groceries for Dumbdumbs")
-st.markdown("*Snap your food. Choose your tier. Buy crap. Get cooking.*")
+col_logo, col_title = st.columns([1, 4])
+with col_logo:
+    try:
+        st.image("logo.svg", width=110)
+    except Exception:
+        st.markdown("🍳")
+with col_title:
+    st.markdown("# Recipes and Groceries for Dumbdumbs")
+    st.markdown("*Snap your food. Choose your tier. Buy crap. Get cooking.*")
 st.divider()
 
 uploaded_file = st.file_uploader(

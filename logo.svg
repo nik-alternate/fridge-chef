@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="crownGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f7c948"/>
+      <stop offset="100%" style="stop-color:#e0a800"/>
+    </linearGradient>
+    <linearGradient id="fridgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8e8e8"/>
+      <stop offset="100%" style="stop-color:#c0c0c0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="195" fill="url(#bgGrad)"/>
+  <circle cx="200" cy="200" r="195" fill="none" stroke="#f7c948" stroke-width="6"/>
+
+  <!-- Fridge body -->
+  <rect x="120" y="130" width="160" height="200" rx="16" ry="16" fill="url(#fridgeGrad)"/>
+
+  <!-- Fridge freezer section -->
+  <rect x="120" y="130" width="160" height="70" rx="16" ry="16" fill="#d0d0d0"/>
+  <rect x="120" y="178" width="160" height="22" fill="#d0d0d0"/>
+
+  <!-- Fridge door handles -->
+  <rect x="222" y="152" width="10" height="28" rx="5" fill="#999"/>
+  <rect x="222" y="218" width="10" height="50" rx="5" fill="#999"/>
+
+  <!-- Fridge divider line -->
+  <line x1="120" y1="200" x2="280" y2="200" stroke="#bbb" stroke-width="3"/>
+
+  <!-- Funny face on fridge -->
+  <!-- Eyes -->
+  <circle cx="172" cy="162" r="10" fill="white"/>
+  <circle cx="208" cy="162" r="10" fill="white"/>
+  <circle cx="175" cy="164" r="5" fill="#222"/>
+  <circle cx="211" cy="164" r="5" fill="#222"/>
+  <!-- Eye shine -->
+  <circle cx="177" cy="162" r="2" fill="white"/>
+  <circle cx="213" cy="162" r="2" fill="white"/>
+
+  <!-- Dumb grin -->
+  <path d="M 163 178 Q 190 196 217 178" stroke="#555" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <!-- Goofy tooth -->
+  <rect x="184" y="178" width="12" height="10" rx="2" fill="white" stroke="#ccc" stroke-width="1"/>
+
+  <!-- Crown on top of fridge -->
+  <polygon points="152,135 152,108 172,122 200,100 228,122 248,108 248,135" fill="url(#crownGrad)" stroke="#c8a800" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Crown jewels -->
+  <circle cx="200" cy="108" r="6" fill="#ff4b4b"/>
+  <circle cx="172" cy="120" r="4" fill="#4baaff"/>
+  <circle cx="228" cy="120" r="4" fill="#4baaff"/>
+
+  <!-- Dollar sign on fridge lower half -->
+  <text x="168" y="258" font-family="Arial Black, Arial" font-weight="900" font-size="42" fill="#ff4b4b" opacity="0.85">$</text>
+
+  <!-- Small fork and knife flanking -->
+  <!-- Fork -->
+  <line x1="105" y1="155" x2="105" y2="305" stroke="#f7c948" stroke-width="5" stroke-linecap="round"/>
+  <line x1="95" y1="155" x2="95" y2="185" stroke="#f7c948" stroke-width="4" stroke-linecap="round"/>
+  <line x1="105" y1="155" x2="105" y2="185" stroke="#f7c948" stroke-width="4" stroke-linecap="round"/>
+  <line x1="115" y1="155" x2="115" y2="185" stroke="#f7c948" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 95 185 Q 105 200 115 185" fill="#f7c948"/>
+
+  <!-- Knife -->
+  <line x1="295" y1="175" x2="295" y2="305" stroke="#f7c948" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 295 155 Q 315 165 295 185" fill="#f7c948" stroke="#f7c948" stroke-width="1"/>
+
+  <!-- App name text -->
+  <text x="200" y="352" font-family="Arial Black, Arial" font-weight="900" font-size="15" fill="#f7c948" text-anchor="middle" letter-spacing="1">RECIPES &amp; GROCERIES</text>
+  <text x="200" y="372" font-family="Arial Black, Arial" font-weight="900" font-size="13" fill="#ff4b4b" text-anchor="middle" letter-spacing="2">FOR DUMBDUMBS</text>
+</svg>
