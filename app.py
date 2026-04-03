@@ -348,10 +348,59 @@ if uploaded_file:
 
             st.markdown(st.session_state.recipe_text)
 
-            # ── Bottom buttons ────────────────────────────────────────────────
+            # ── Export section ────────────────────────────────────────────────
             st.divider()
-            st.success("✅ Done! Screenshot your shopping list before you head out.")
+            st.markdown("### 📤 Save this recipe")
 
+            recipe_text = st.session_state.recipe_text
+            label = "Broke Bitch Boy Budget" if mode == "broke" else "Alpha Chad Feast"
+            export_text = f"Recipes and Groceries for Dumbdumbs\n{label}\n\n{recipe_text}"
+            filename = "broke-bitch-recipe.txt" if mode == "broke" else "alpha-chad-recipe.txt"
+
+            col_e1, col_e2 = st.columns(2)
+
+            with col_e1:
+                # Download as .txt — works on all devices
+                st.download_button(
+                    label="📥 Download Recipe + List",
+                    data=export_text,
+                    file_name=filename,
+                    mime="text/plain",
+                    use_container_width=True,
+                )
+
+            with col_e2:
+                # Copy to clipboard via JavaScript
+                escaped = export_text.replace("`", "'").replace("\\", "\\\\").replace("\n", "\\n")
+                st.components.v1.html(f"""
+                    <button onclick="
+                        navigator.clipboard.writeText(`{escaped}`).then(function() {{
+                            document.getElementById('copy-btn').innerText = '✅ Copied!';
+                            setTimeout(function() {{
+                                document.getElementById('copy-btn').innerText = '📋 Copy to Clipboard';
+                            }}, 2000);
+                        }});
+                    "
+                    id="copy-btn"
+                    style="
+                        width: 100%;
+                        padding: 10px;
+                        background-color: #ff4b4b;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 15px;
+                        font-weight: 600;
+                        cursor: pointer;
+                    ">
+                        📋 Copy to Clipboard
+                    </button>
+                """, height=50)
+
+            st.caption("💡 iPhone users: tap Copy, open Notes, paste. Done.")
+
+            # ── Bottom nav buttons ────────────────────────────────────────────
+            st.divider()
             col_r1, col_r2, col_r3 = st.columns(3)
             with col_r1:
                 if st.button("🎲 Try Another Option", use_container_width=True, key="try_another_bottom"):
