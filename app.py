@@ -459,7 +459,7 @@ if uploaded_file:
             st.markdown("**Choose your recipe tier:**")
             col_b, col_a = st.columns(2)
             with col_b:
-                if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary", key="broke_btn"):
+                if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="secondary", key="broke_btn"):
                     st.session_state.recipe_mode = "broke"
                     st.session_state.recipe_text = None
                     st.session_state.special_request = None
