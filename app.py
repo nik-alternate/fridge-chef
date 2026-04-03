@@ -284,7 +284,7 @@ ALPHA_STYLES = [
 ]
 
 
-def recipe_stream(ingredients: list[str], mode: str):
+def recipe_stream(ingredients: list[str], mode: str, special_request: str = ""):
     """Stream a single recipe (broke or alpha) based on mode."""
     client = get_client()
     ingredients_str = ", ".join(ingredients)
@@ -297,6 +297,12 @@ def recipe_stream(ingredients: list[str], mode: str):
         "different cuisine, different cooking method. Never repeat yourself."
     )
 
+    request_line = (
+        f"\n\nIMPORTANT — the user has a special request: **{special_request}**. "
+        "Shape the recipe around this request while still using their ingredients."
+        if special_request else ""
+    )
+
     if mode == "broke":
         cuisine = random.choice(BROKE_CUISINES)
         method = random.choice(BROKE_METHODS)
@@ -305,7 +311,7 @@ def recipe_stream(ingredients: list[str], mode: str):
             f"Generate ONE budget recipe inspired by **{cuisine}** cuisine, "
             f"using a **{method}** approach. Use most of what they have, "
             "suggest up to 5 cheap additions (chicken thigh, tilapia, ground beef, eggs, canned beans, etc.). "
-            "Make it feel like a completely different meal — not a generic stir-fry or scramble.\n\n"
+            f"Make it feel like a completely different meal — not a generic stir-fry or scramble.{request_line}\n\n"
             "Use this EXACT format:\n\n"
             "## 💸 BROKE BITCH BOY BUDGET\n\n"
             "### [Recipe Name]\n\n"
@@ -332,7 +338,7 @@ def recipe_stream(ingredients: list[str], mode: str):
             f"Generate ONE premium recipe in the style of **{style}**, "
             f"built around **{protein}** as the hero ingredient. "
             "Use most of what they have. Make it feel genuinely impressive and distinct — "
-            "not a basic seared steak. Think plating, technique, drama.\n\n"
+            f"not a basic seared steak. Think plating, technique, drama.{request_line}\n\n"
             "Use this EXACT format:\n\n"
             "## 👑 ALPHA CHAD FEAST\n\n"
             "### [Recipe Name]\n\n"
@@ -425,7 +431,27 @@ if uploaded_file:
         st.markdown("**🥦 Ingredients I found:**")
         tags_html = "".join(f'<span class="ingredient-tag">{ing}</span>' for ing in ingredients)
         st.markdown(tags_html, unsafe_allow_html=True)
+
+        # ── Add missing ingredients ───────────────────────────────────────────
         st.markdown("")
+        with st.expander("➕ Missing something? Add more ingredients"):
+            col_add, col_btn = st.columns([4, 1])
+            with col_add:
+                new_ingredient = st.text_input(
+                    "Add ingredient",
+                    placeholder="e.g. garlic, chicken breast, olive oil...",
+                    label_visibility="collapsed",
+                    key="ingredient_input",
+                )
+            with col_btn:
+                if st.button("Add", type="primary", use_container_width=True, key="add_ingredient_btn"):
+                    if new_ingredient.strip():
+                        # Append and clear by resetting state
+                        updated = st.session_state.ingredients + [new_ingredient.strip().lower()]
+                        st.session_state.ingredients = updated
+                        st.session_state.recipe_text = None  # reset recipe if ingredients change
+                        st.rerun()
+
         st.divider()
 
         # ── Step 2: Tier selection ────────────────────────────────────────────
@@ -433,35 +459,74 @@ if uploaded_file:
             st.markdown("**Choose your recipe tier:**")
             col_b, col_a = st.columns(2)
             with col_b:
-                # Broke = dark red, white text
                 if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary", key="broke_btn"):
                     st.session_state.recipe_mode = "broke"
                     st.session_state.recipe_text = None
+                    st.session_state.special_request = None
+                    st.session_state.awaiting_request = False
                     st.rerun()
             with col_a:
-                # Alpha = gold, black text — styled via secondary class override below
                 if st.button("👑 Alpha Chad Feast", use_container_width=True, type="secondary", key="alpha_btn"):
                     st.session_state.recipe_mode = "alpha"
                     st.session_state.recipe_text = None
+                    st.session_state.special_request = None
+                    st.session_state.awaiting_request = False
+                    st.rerun()
+
+        # ── Step 2b: Special request or just go ──────────────────────────────
+        elif not st.session_state.get("recipe_text") and not st.session_state.get("special_request") and not st.session_state.get("awaiting_request"):
+            mode = st.session_state.recipe_mode
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            st.markdown(f"**You picked: {label}**")
+            st.markdown("What do you want to do?")
+            col_req, col_go = st.columns(2)
+            with col_req:
+                if st.button("🎯 Add a special request", use_container_width=True, type="secondary", key="special_req_btn"):
+                    st.session_state.awaiting_request = True
+                    st.rerun()
+            with col_go:
+                if st.button("🎲 Do the thinking for me", use_container_width=True, type="primary", key="just_go_btn"):
+                    st.session_state.special_request = ""
+                    st.rerun()
+
+        elif st.session_state.get("awaiting_request"):
+            mode = st.session_state.recipe_mode
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            st.markdown(f"**You picked: {label}**")
+            request_text = st.text_input(
+                "What are you looking for?",
+                placeholder="e.g. make it a salad, I want pasta, something spicy...",
+                key="request_input",
+            )
+            col_submit, col_skip = st.columns(2)
+            with col_submit:
+                if st.button("✅ Let's go", use_container_width=True, type="primary", key="submit_request_btn"):
+                    st.session_state.special_request = request_text.strip()
+                    st.session_state.awaiting_request = False
+                    st.rerun()
+            with col_skip:
+                if st.button("Skip — surprise me", use_container_width=True, type="secondary", key="skip_request_btn"):
+                    st.session_state.special_request = ""
+                    st.session_state.awaiting_request = False
                     st.rerun()
 
         # ── Step 3: Show recipe ───────────────────────────────────────────────
-        else:
+        elif st.session_state.get("recipe_mode") and st.session_state.get("special_request") is not None:
             mode = st.session_state.recipe_mode
+            special_request = st.session_state.get("special_request", "")
             label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
             st.markdown(f"**Your recipe: {label}**")
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
                 pool = BROKE_LOADING_MESSAGES if mode == "broke" else ALPHA_LOADING_MESSAGES
-                # Shuffle so order feels fresh each time
                 phrases = pool.copy()
                 random.shuffle(phrases)
 
                 # Generate recipe in a background thread
                 result = {"text": None}
                 def generate():
-                    result["text"] = "".join(recipe_stream(ingredients, mode))
+                    result["text"] = "".join(recipe_stream(ingredients, mode, special_request))
                 t = threading.Thread(target=generate)
                 t.start()
 
@@ -488,6 +553,8 @@ if uploaded_file:
             # ── Try Another button (above recipe) ────────────────────────────
             if st.button("🎲 Try Another Option", use_container_width=True, key="try_another_top"):
                 st.session_state.recipe_text = None
+                st.session_state.special_request = None
+                st.session_state.awaiting_request = False
                 st.rerun()
 
             st.markdown(st.session_state.recipe_text)
@@ -553,11 +620,15 @@ if uploaded_file:
             with col_r1:
                 if st.button("🎲 Try Another Option", use_container_width=True, key="try_another_bottom"):
                     st.session_state.recipe_text = None
+                    st.session_state.special_request = None
+                    st.session_state.awaiting_request = False
                     st.rerun()
             with col_r2:
                 if st.button("🔄 Switch Tiers", use_container_width=True):
                     st.session_state.recipe_mode = None
                     st.session_state.recipe_text = None
+                    st.session_state.special_request = None
+                    st.session_state.awaiting_request = False
                     st.rerun()
             with col_r3:
                 if st.button("📸 Scan Another Fridge", use_container_width=True):
