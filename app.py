@@ -509,7 +509,7 @@ if uploaded_file:
                     st.rerun()
 
         # ── Step 2b: Special request or just go ──────────────────────────────
-        elif not st.session_state.get("recipe_text") and not st.session_state.get("special_request") and not st.session_state.get("awaiting_request"):
+        elif not st.session_state.get("recipe_text") and st.session_state.get("special_request") is None and not st.session_state.get("awaiting_request"):
             mode = st.session_state.recipe_mode
             label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
             st.markdown(f"**You picked: {label}**")
