@@ -5,6 +5,8 @@ import json
 import os
 import io
 import random
+import time
+import threading
 from PIL import Image
 import pillow_heif
 from dotenv import load_dotenv
@@ -23,6 +25,14 @@ BROKE_LOADING_MESSAGES = [
     "💀 Assessing the damage in your fridge...",
     "🤑 Stretching those dollars like Olympic athletes...",
     "🧾 Checking if you qualify for this meal financially...",
+]
+
+ALPHA_LOADING_MESSAGES = [
+    "👑 Sourcing the finest ingredients for your ascension...",
+    "🥩 Contacting the wagyu supplier...",
+    "🦞 Waking up the lobster...",
+    "💎 Polishing the silver cutlery...",
+    "🍷 Selecting a wine pairing worthy of your greatness...",
 ]
 
 load_dotenv()
@@ -264,20 +274,33 @@ if uploaded_file:
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
-                import time
-                if mode == "broke":
-                    loading_msg = random.choice(BROKE_LOADING_MESSAGES)
-                else:
-                    loading_msg = "👑 Sourcing the finest ingredients for your ascension..."
-                with st.spinner(loading_msg):
-                    start = time.time()
-                    # Collect recipe silently in the background
-                    full_text = "".join(recipe_stream(ingredients, mode))
-                    # Wait out the remainder of 5 seconds if recipe came back fast
-                    elapsed = time.time() - start
-                    if elapsed < 5:
-                        time.sleep(5 - elapsed)
-                # Recipe is ready — display all at once
+                pool = BROKE_LOADING_MESSAGES if mode == "broke" else ALPHA_LOADING_MESSAGES
+                # Shuffle so order feels fresh each time
+                phrases = pool.copy()
+                random.shuffle(phrases)
+
+                # Generate recipe in a background thread
+                result = {"text": None}
+                def generate():
+                    result["text"] = "".join(recipe_stream(ingredients, mode))
+                t = threading.Thread(target=generate)
+                t.start()
+
+                # Rotate phrases every 3 seconds while recipe generates
+                placeholder = st.empty()
+                idx = 0
+                min_duration = 5  # always show at least this long
+                start = time.time()
+                while t.is_alive() or (time.time() - start) < min_duration:
+                    phrase = phrases[idx % len(phrases)]
+                    placeholder.markdown(f"### {phrase}")
+                    idx += 1
+                    time.sleep(3)
+                t.join()
+                placeholder.empty()
+
+                # Display full recipe all at once
+                full_text = result["text"]
                 st.markdown(full_text)
                 st.session_state.recipe_text = full_text
             else:
