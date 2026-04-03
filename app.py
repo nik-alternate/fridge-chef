@@ -46,18 +46,135 @@ st.set_page_config(
 )
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
+# Palette:
+#   #f7c948  — gold (primary accent)
+#   #0d0d0d  — near-black background
+#   #e8e8e8  — off-white text
+#   #c0392b  — red (third accent for broke tier buttons / warnings)
+
 st.markdown("""
 <style>
+
+/* ── Global background & text ── */
+html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {
+    background-color: #0d0d0d !important;
+    color: #e8e8e8 !important;
+}
+[data-testid="stHeader"] { background-color: #0d0d0d !important; }
+[data-testid="stSidebar"] { background-color: #111 !important; }
+
+/* ── All text elements ── */
+h1, h2, h3, h4, h5, h6, p, li, span, label, div {
+    color: #e8e8e8 !important;
+}
+
+/* ── Titles ── */
+h1 { color: #f7c948 !important; font-weight: 900 !important; }
+
+/* ── Dividers ── */
+hr { border-color: #f7c948 !important; opacity: 0.3; }
+
+/* ── Primary buttons (Streamlit default red → gold) ── */
+[data-testid="stButton"] button[kind="primary"] {
+    background-color: #f7c948 !important;
+    color: #0d0d0d !important;
+    border: none !important;
+    font-weight: 800 !important;
+    font-size: 1rem !important;
+    border-radius: 8px !important;
+}
+[data-testid="stButton"] button[kind="primary"]:hover {
+    background-color: #e0a800 !important;
+    color: #0d0d0d !important;
+}
+
+/* ── Secondary buttons ── */
+[data-testid="stButton"] button[kind="secondary"] {
+    background-color: transparent !important;
+    color: #f7c948 !important;
+    border: 2px solid #f7c948 !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stButton"] button[kind="secondary"]:hover {
+    background-color: #f7c948 !important;
+    color: #0d0d0d !important;
+}
+
+/* ── File uploader ── */
+[data-testid="stFileUploader"] {
+    background-color: #1a1a1a !important;
+    border: 2px dashed #f7c948 !important;
+    border-radius: 12px !important;
+    padding: 8px !important;
+}
+[data-testid="stFileUploader"] label { color: #f7c948 !important; }
+
+/* ── Success box ── */
+[data-testid="stAlert"] {
+    background-color: #1a1a00 !important;
+    border: 1px solid #f7c948 !important;
+    border-radius: 8px !important;
+    color: #f7c948 !important;
+}
+
+/* ── Info box ── */
+[data-testid="stInfo"] {
+    background-color: #1a1a1a !important;
+    border: 1px solid #f7c948 !important;
+    color: #e8e8e8 !important;
+    border-radius: 8px !important;
+}
+
+/* ── Spinner text ── */
+[data-testid="stSpinner"] p { color: #f7c948 !important; }
+
+/* ── Captions ── */
+[data-testid="stCaptionContainer"] p { color: #888 !important; }
+
+/* ── Ingredient tags ── */
 .ingredient-tag {
     display: inline-block;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background-color: #1a1600;
+    border: 1.5px solid #f7c948;
+    color: #f7c948 !important;
     padding: 5px 14px;
     border-radius: 20px;
     margin: 4px;
     font-size: 0.88em;
-    font-weight: 500;
+    font-weight: 600;
 }
+
+/* ── Loading phrase text ── */
+.loading-phrase {
+    color: #f7c948 !important;
+    font-size: 1.4rem !important;
+    font-weight: 700 !important;
+}
+
+/* ── Download button ── */
+[data-testid="stDownloadButton"] button {
+    background-color: transparent !important;
+    color: #f7c948 !important;
+    border: 2px solid #f7c948 !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+}
+[data-testid="stDownloadButton"] button:hover {
+    background-color: #f7c948 !important;
+    color: #0d0d0d !important;
+}
+
+/* ── Image caption ── */
+[data-testid="stImageCaption"] { color: #888 !important; }
+
+/* ── Markdown bold ── */
+strong { color: #f7c948 !important; }
+
+/* ── Italic / subheads ── */
+em { color: #aaa !important; }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,7 +455,7 @@ if uploaded_file:
                 start = time.time()
                 while t.is_alive() or (time.time() - start) < min_duration:
                     phrase = phrases[idx % len(phrases)]
-                    placeholder.markdown(f"### {phrase}")
+                    placeholder.markdown(f"<p class='loading-phrase'>{phrase}</p>", unsafe_allow_html=True)
                     idx += 1
                     time.sleep(3)
                 t.join()
@@ -395,14 +512,18 @@ if uploaded_file:
                     style="
                         width: 100%;
                         padding: 10px;
-                        background-color: #ff4b4b;
-                        color: white;
-                        border: none;
+                        background-color: transparent;
+                        color: #f7c948;
+                        border: 2px solid #f7c948;
                         border-radius: 8px;
                         font-size: 15px;
-                        font-weight: 600;
+                        font-weight: 700;
                         cursor: pointer;
-                    ">
+                        font-family: sans-serif;
+                        transition: all 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='#f7c948'; this.style.color='#0d0d0d';"
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.color='#f7c948';">
                         📋 Copy to Clipboard
                     </button>
                 """, height=50)
