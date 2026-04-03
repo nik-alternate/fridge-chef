@@ -264,13 +264,21 @@ if uploaded_file:
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
+                import time
                 if mode == "broke":
                     loading_msg = random.choice(BROKE_LOADING_MESSAGES)
                 else:
                     loading_msg = "👑 Sourcing the finest ingredients for your ascension..."
                 with st.spinner(loading_msg):
-                    import time; time.sleep(5)
-                full_text = st.write_stream(recipe_stream(ingredients, mode))
+                    start = time.time()
+                    # Collect recipe silently in the background
+                    full_text = "".join(recipe_stream(ingredients, mode))
+                    # Wait out the remainder of 5 seconds if recipe came back fast
+                    elapsed = time.time() - start
+                    if elapsed < 5:
+                        time.sleep(5 - elapsed)
+                # Recipe is ready — display all at once
+                st.markdown(full_text)
                 st.session_state.recipe_text = full_text
             else:
                 st.markdown(st.session_state.recipe_text)
