@@ -124,6 +124,34 @@ def identify_ingredients(image_bytes: bytes, media_type: str) -> list[str]:
         return [item.strip(' "\'') for item in raw.strip("[]").split(",") if item.strip()]
 
 
+BROKE_CUISINES = [
+    "Mexican street food", "Southern comfort food", "Asian stir-fry",
+    "Italian peasant food", "American diner", "Indian curry",
+    "Middle Eastern", "Caribbean", "Greek", "Japanese home cooking",
+    "Korean BBQ-inspired", "Tex-Mex", "French bistro on a budget",
+    "Cajun", "Filipino", "Thai street food",
+]
+
+BROKE_METHODS = [
+    "one pan", "sheet pan", "slow cooker vibes", "15-minute weeknight",
+    "fried rice style", "pasta-based", "soup or stew", "sandwich or wrap",
+    "grain bowl", "egg-based", "taco situation",
+]
+
+ALPHA_PROTEINS = [
+    "A5 wagyu beef", "filet mignon", "whole lobster tail",
+    "king crab legs", "prime dry-aged ribeye", "Chilean sea bass",
+    "bluefin tuna sashimi-grade steak", "Alaskan king salmon",
+    "foie gras", "rack of lamb",
+]
+
+ALPHA_STYLES = [
+    "French fine dining", "Japanese omakase-inspired", "steakhouse",
+    "coastal Italian", "modern American brasserie", "Spanish tapas elevated",
+    "Michelin-star bistro", "NYC rooftop dinner party",
+]
+
+
 def recipe_stream(ingredients: list[str], mode: str):
     """Stream a single recipe (broke or alpha) based on mode."""
     client = get_client()
@@ -132,14 +160,20 @@ def recipe_stream(ingredients: list[str], mode: str):
     system_msg = (
         "You are a brutally funny but genuinely helpful chef. "
         "Give real, delicious recipes with personality. "
-        "Never break character. Always be fun, a little roast-y, and actually useful."
+        "Never break character. Always be fun, a little roast-y, and actually useful. "
+        "Every recipe you generate should be genuinely different — different dish, "
+        "different cuisine, different cooking method. Never repeat yourself."
     )
 
     if mode == "broke":
+        cuisine = random.choice(BROKE_CUISINES)
+        method = random.choice(BROKE_METHODS)
         user_msg = (
             f"The user has these ingredients: {ingredients_str}\n\n"
-            "Generate ONE budget recipe. Use most of what they have, "
-            "suggest up to 5 cheap additions (chicken thigh, tilapia, ground beef, eggs, canned beans, etc.).\n\n"
+            f"Generate ONE budget recipe inspired by **{cuisine}** cuisine, "
+            f"using a **{method}** approach. Use most of what they have, "
+            "suggest up to 5 cheap additions (chicken thigh, tilapia, ground beef, eggs, canned beans, etc.). "
+            "Make it feel like a completely different meal — not a generic stir-fry or scramble.\n\n"
             "Use this EXACT format:\n\n"
             "## 💸 BROKE BITCH BOY BUDGET\n\n"
             "### [Recipe Name]\n\n"
@@ -159,10 +193,14 @@ def recipe_stream(ingredients: list[str], mode: str):
             "Keep it fun and make the food genuinely good."
         )
     else:
+        protein = random.choice(ALPHA_PROTEINS)
+        style = random.choice(ALPHA_STYLES)
         user_msg = (
             f"The user has these ingredients: {ingredients_str}\n\n"
-            "Generate ONE premium recipe. Use most of what they have. "
-            "MUST include at least one of: wagyu beef, filet mignon, lobster tail, king crab legs, or prime ribeye.\n\n"
+            f"Generate ONE premium recipe in the style of **{style}**, "
+            f"built around **{protein}** as the hero ingredient. "
+            "Use most of what they have. Make it feel genuinely impressive and distinct — "
+            "not a basic seared steak. Think plating, technique, drama.\n\n"
             "Use this EXACT format:\n\n"
             "## 👑 ALPHA CHAD FEAST\n\n"
             "### [Recipe Name]\n\n"
@@ -170,7 +208,7 @@ def recipe_stream(ingredients: list[str], mode: str):
             "**✅ What you already have:**\n"
             "- [ingredient from their list]\n\n"
             "**🛒 What you need to buy:**\n"
-            "- [REQUIRED premium protein: wagyu, filet mignon, lobster tail, king crab, or prime ribeye] — ~$[price]\n"
+            f"- {protein} — ~$[price]\n"
             "- [other premium additions] — ~$[price]\n\n"
             "**👨‍🍳 How to make it:**\n"
             "1. [step]\n"
@@ -301,21 +339,30 @@ if uploaded_file:
 
                 # Display full recipe all at once
                 full_text = result["text"]
-                st.markdown(full_text)
                 st.session_state.recipe_text = full_text
-            else:
-                st.markdown(st.session_state.recipe_text)
 
+            # ── Try Another button (above recipe) ────────────────────────────
+            if st.button("🎲 Try Another Option", use_container_width=True, key="try_another_top"):
+                st.session_state.recipe_text = None
+                st.rerun()
+
+            st.markdown(st.session_state.recipe_text)
+
+            # ── Bottom buttons ────────────────────────────────────────────────
             st.divider()
             st.success("✅ Done! Screenshot your shopping list before you head out.")
 
-            col_r1, col_r2 = st.columns(2)
+            col_r1, col_r2, col_r3 = st.columns(3)
             with col_r1:
+                if st.button("🎲 Try Another Option", use_container_width=True, key="try_another_bottom"):
+                    st.session_state.recipe_text = None
+                    st.rerun()
+            with col_r2:
                 if st.button("🔄 Switch Tiers", use_container_width=True):
                     st.session_state.recipe_mode = None
                     st.session_state.recipe_text = None
                     st.rerun()
-            with col_r2:
+            with col_r3:
                 if st.button("📸 Scan Another Fridge", use_container_width=True):
                     for key in ["ingredients", "recipe_mode", "recipe_text", "image_bytes", "media_type"]:
                         st.session_state.pop(key, None)
