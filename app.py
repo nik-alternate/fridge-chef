@@ -283,7 +283,7 @@ if uploaded_file:
 
         ingredients = st.session_state.ingredients
 
-        st.subheader("🥦 Ingredients I found:")
+        st.markdown("**🥦 Ingredients I found:**")
         tags_html = "".join(f'<span class="ingredient-tag">{ing}</span>' for ing in ingredients)
         st.markdown(tags_html, unsafe_allow_html=True)
         st.markdown("")
@@ -291,7 +291,7 @@ if uploaded_file:
 
         # ── Step 2: Tier selection ────────────────────────────────────────────
         if not st.session_state.get("recipe_mode"):
-            st.subheader("Choose your recipe tier:")
+            st.markdown("**Choose your recipe tier:**")
             col_b, col_a = st.columns(2)
             with col_b:
                 if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary"):
@@ -308,7 +308,7 @@ if uploaded_file:
         else:
             mode = st.session_state.recipe_mode
             label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
-            st.subheader(f"Your recipe: {label}")
+            st.markdown(f"**Your recipe: {label}**")
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
@@ -337,8 +337,11 @@ if uploaded_file:
                 t.join()
                 placeholder.empty()
 
-                # Display full recipe all at once
+                # Strip the first heading line Claude echoes back (we already show the label)
                 full_text = result["text"]
+                lines = full_text.splitlines()
+                if lines and lines[0].startswith("##"):
+                    full_text = "\n".join(lines[1:]).lstrip("\n")
                 st.session_state.recipe_text = full_text
 
             # ── Try Another button (above recipe) ────────────────────────────
