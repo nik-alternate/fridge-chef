@@ -74,23 +74,25 @@ h1 { color: #f7c948 !important; font-weight: 900 !important; }
 /* ── Dividers ── */
 hr { border-color: #f7c948 !important; opacity: 0.3; }
 
-/* ── Primary buttons (Streamlit default red → gold) ── */
+/* ── Primary buttons — white text on dark gold, very readable ── */
 [data-testid="stButton"] button[kind="primary"] {
-    background-color: #f7c948 !important;
-    color: #0d0d0d !important;
+    background-color: #c8960a !important;
+    color: #ffffff !important;
     border: none !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
     font-size: 1rem !important;
+    letter-spacing: 0.03em !important;
     border-radius: 8px !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.4) !important;
 }
 [data-testid="stButton"] button[kind="primary"]:hover {
-    background-color: #e0a800 !important;
-    color: #0d0d0d !important;
+    background-color: #f7c948 !important;
+    color: #000000 !important;
 }
 
-/* ── Secondary buttons ── */
+/* ── Secondary buttons — gold outline, gold text ── */
 [data-testid="stButton"] button[kind="secondary"] {
-    background-color: transparent !important;
+    background-color: #1a1a1a !important;
     color: #f7c948 !important;
     border: 2px solid #f7c948 !important;
     font-weight: 700 !important;
@@ -98,7 +100,7 @@ hr { border-color: #f7c948 !important; opacity: 0.3; }
 }
 [data-testid="stButton"] button[kind="secondary"]:hover {
     background-color: #f7c948 !important;
-    color: #0d0d0d !important;
+    color: #000000 !important;
 }
 
 /* ── File uploader ── */
@@ -164,6 +166,19 @@ hr { border-color: #f7c948 !important; opacity: 0.3; }
 [data-testid="stDownloadButton"] button:hover {
     background-color: #f7c948 !important;
     color: #0d0d0d !important;
+}
+
+/* ── Broke Bitch button — crimson red, white text ── */
+[data-testid="stButton"]:has(button[key="broke_btn"]) button,
+button[kind="primary"] {
+    /* fallback handled by primary rule above */
+}
+
+/* ── Alpha Chad button — bright gold, black text ── */
+[data-testid="stButton"]:has(button[data-testid*="alpha_btn"]) button {
+    background-color: #f7c948 !important;
+    color: #000000 !important;
+    border: none !important;
 }
 
 /* ── Image caption ── */
@@ -418,12 +433,14 @@ if uploaded_file:
             st.markdown("**Choose your recipe tier:**")
             col_b, col_a = st.columns(2)
             with col_b:
-                if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary"):
+                # Broke = dark red, white text
+                if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="primary", key="broke_btn"):
                     st.session_state.recipe_mode = "broke"
                     st.session_state.recipe_text = None
                     st.rerun()
             with col_a:
-                if st.button("👑 Alpha Chad Feast", use_container_width=True, type="primary"):
+                # Alpha = gold, black text — styled via secondary class override below
+                if st.button("👑 Alpha Chad Feast", use_container_width=True, type="secondary", key="alpha_btn"):
                     st.session_state.recipe_mode = "alpha"
                     st.session_state.recipe_text = None
                     st.rerun()
