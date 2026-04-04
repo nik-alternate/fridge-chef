@@ -70,6 +70,34 @@ ALPHA_LOADING_MESSAGES = [
     "🏆 Preparing a meal that would make Gordon Ramsay cry...",
 ]
 
+DIRTY_BULK_LOADING_MESSAGES = [
+    "🏋️ Calculating your total daily caloric devastation...",
+    "🍗 Sourcing 47 chicken breasts...",
+    "💪 Pre-loading the protein powder...",
+    "🥩 Estimating how many cows you need...",
+    "📈 Projecting your gains... and your gut...",
+    "🧱 Building mass, brick by delicious brick...",
+    "🍳 Cracking 12 eggs. This is fine.",
+    "🐄 Calling the ranch. You'll need a bulk order.",
+    "⚖️ Checking the scale... adding more food...",
+    "🔩 Assembling the gains machine...",
+    "🏴‍☠️ Abandoning all nutritional guidelines...",
+    "📊 Macros look disgusting. Perfect.",
+    "🧠 Convincing yourself this is still the plan...",
+    "🛒 Buying out the entire meat section...",
+    "💀 Your arteries have been notified...",
+    "🍔 The bulk never ends. It only evolves.",
+    "🧬 Optimizing for maximum size, minimum shame...",
+    "🥛 Gallon of milk? That's a starter.",
+    "📅 Shred date: TBD. Probably never.",
+    "🤌 Finding the perfect protein-to-regret ratio...",
+    "🏆 Engineering a meal your gym bro would respect...",
+    "🧪 Calculating the exact point where gains become gut...",
+    "🥓 Adding bacon. For the protein. Obviously.",
+    "⏳ The cut starts Monday. It's always Monday.",
+    "🔥 Fueling the bulk engine. Full send.",
+]
+
 load_dotenv()
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -318,6 +346,21 @@ ALPHA_STYLES = [
     "Michelin-star bistro", "NYC rooftop dinner party",
 ]
 
+DIRTY_BULK_PROTEINS = [
+    "4 chicken breasts", "a full rack of ribs", "2 lbs of ground beef",
+    "an entire rotisserie chicken", "a pound of bacon plus chicken thighs",
+    "beef mince and eggs — lots of eggs", "a full pork shoulder",
+    "a mixing bowl of tuna", "ground turkey and ground beef combined",
+    "a dozen eggs and whatever meat is nearby",
+]
+
+DIRTY_BULK_STYLES = [
+    "loaded and smothered", "deep-fried and doubled", "cheesy and excessive",
+    "stacked and dripping", "skillet-slammed and shameless",
+    "baked until destroyed in the best way", "sauced beyond reason",
+    "wrapped in more meat", "protein-packed diner style",
+]
+
 
 def recipe_stream(ingredients: list[str], mode: str, special_request: str = ""):
     """Stream a single recipe (broke or alpha) based on mode."""
@@ -392,6 +435,36 @@ def recipe_stream(ingredients: list[str], mode: str, special_request: str = ""):
             "## 🛒 YOUR SHOPPING LIST (~$[total estimate])\n"
             "- [ ] [item] — ~$[price]\n\n"
             "Keep it fun and make the food genuinely impressive."
+        )
+
+    elif mode == "dirty_bulk":
+        protein = random.choice(DIRTY_BULK_PROTEINS)
+        style = random.choice(DIRTY_BULK_STYLES)
+        user_msg = (
+            f"The user has these ingredients: {ingredients_str}\n\n"
+            f"Generate ONE dirty bulk recipe built around **{protein}**, cooked **{style}**. "
+            "The goal is maximum protein but zero regard for being healthy — it should be indulgent, "
+            "heavy, and the kind of meal a gym bro convinces himself is fine because 'gains'. "
+            f"Use most of what they have. Suggest cheap high-protein additions.{request_line}\n\n"
+            "Use this EXACT format:\n\n"
+            "## 💪 DIRTY BULK\n\n"
+            "### [Recipe Name]\n\n"
+            "*[1–2 sentence description — acknowledge it's disgusting and perfect, reference 'the bulk never ends']*\n\n"
+            "**✅ What you already have:**\n"
+            "- [ingredient from their list]\n\n"
+            "**🛒 What you need to buy:**\n"
+            "- [high-protein addition] — ~$[price]\n\n"
+            "**💪 Macros (approximate):**\n"
+            "Protein: [Xg] | Carbs: [Xg] | Fat: [Xg] | Calories: ~[X]\n\n"
+            "**👨‍🍳 How to make it:**\n"
+            "1. [step]\n"
+            "2. [step]\n"
+            "(4–6 steps)\n\n"
+            "**🏋️ The verdict:** [One sentence about why this is technically food and definitely worth it]\n\n"
+            "---\n"
+            "## 🛒 YOUR SHOPPING LIST (~$[total estimate])\n"
+            "- [ ] [item] — ~$[price]\n\n"
+            "Make it genuinely high protein (100g+), unambiguously unhealthy, and absolutely delicious."
         )
 
     with client.messages.stream(
@@ -492,10 +565,17 @@ if uploaded_file:
         # ── Step 2: Tier selection ────────────────────────────────────────────
         if not st.session_state.get("recipe_mode"):
             st.markdown("**Choose your recipe tier:**")
-            col_b, col_a = st.columns(2)
+            col_b, col_d, col_a = st.columns(3)
             with col_b:
                 if st.button("💸 Broke Bitch Boy Budget", use_container_width=True, type="secondary", key="broke_btn"):
                     st.session_state.recipe_mode = "broke"
+                    st.session_state.recipe_text = None
+                    st.session_state.special_request = None
+                    st.session_state.awaiting_request = False
+                    st.rerun()
+            with col_d:
+                if st.button("💪 Dirty Bulk", use_container_width=True, type="secondary", key="dirty_bulk_btn"):
+                    st.session_state.recipe_mode = "dirty_bulk"
                     st.session_state.recipe_text = None
                     st.session_state.special_request = None
                     st.session_state.awaiting_request = False
@@ -511,7 +591,7 @@ if uploaded_file:
         # ── Step 2b: Special request or just go ──────────────────────────────
         elif not st.session_state.get("recipe_text") and st.session_state.get("special_request") is None and not st.session_state.get("awaiting_request"):
             mode = st.session_state.recipe_mode
-            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else ("💪 Dirty Bulk" if mode == "dirty_bulk" else "👑 Alpha Chad Feast")
             st.markdown(f"**You picked: {label}**")
             st.markdown("What do you want to do?")
             col_req, col_go = st.columns(2)
@@ -526,7 +606,7 @@ if uploaded_file:
 
         elif st.session_state.get("awaiting_request"):
             mode = st.session_state.recipe_mode
-            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else ("💪 Dirty Bulk" if mode == "dirty_bulk" else "👑 Alpha Chad Feast")
             st.markdown(f"**You picked: {label}**")
             request_text = st.text_input(
                 "What are you looking for?",
@@ -549,12 +629,12 @@ if uploaded_file:
         elif st.session_state.get("recipe_mode") and st.session_state.get("special_request") is not None:
             mode = st.session_state.recipe_mode
             special_request = st.session_state.get("special_request", "")
-            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else "👑 Alpha Chad Feast"
+            label = "💸 Broke Bitch Boy Budget" if mode == "broke" else ("💪 Dirty Bulk" if mode == "dirty_bulk" else "👑 Alpha Chad Feast")
             st.markdown(f"**Your recipe: {label}**")
 
             # Stream if not yet generated, otherwise show cached text
             if not st.session_state.get("recipe_text"):
-                pool = BROKE_LOADING_MESSAGES if mode == "broke" else ALPHA_LOADING_MESSAGES
+                pool = BROKE_LOADING_MESSAGES if mode == "broke" else (DIRTY_BULK_LOADING_MESSAGES if mode == "dirty_bulk" else ALPHA_LOADING_MESSAGES)
                 phrases = pool.copy()
                 random.shuffle(phrases)
 
@@ -599,9 +679,9 @@ if uploaded_file:
             st.markdown("### 📤 Save this recipe")
 
             recipe_text = st.session_state.recipe_text
-            label = "Broke Bitch Boy Budget" if mode == "broke" else "Alpha Chad Feast"
+            label = "Broke Bitch Boy Budget" if mode == "broke" else ("Dirty Bulk" if mode == "dirty_bulk" else "Alpha Chad Feast")
             export_text = f"Recipes and Groceries for Dumbdumbs\n{label}\n\n{recipe_text}"
-            filename = "broke-bitch-recipe.txt" if mode == "broke" else "alpha-chad-recipe.txt"
+            filename = "broke-bitch-recipe.txt" if mode == "broke" else ("dirty-bulk-recipe.txt" if mode == "dirty_bulk" else "alpha-chad-recipe.txt")
 
             col_e1, col_e2 = st.columns(2)
 
