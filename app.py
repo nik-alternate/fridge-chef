@@ -524,7 +524,19 @@ if uploaded_file:
 
         # ── Step 1: Identify ingredients (once, then cache) ──────────────────
         if not st.session_state.get("ingredients"):
-            with st.spinner("🔍 Scanning your ingredients..."):
+            scan_phrases = [
+                "🔍 Judging the contents of your fridge...",
+                "👀 Staring into your fridge like it owes you money...",
+                "🧐 Assessing the situation in there...",
+                "🕵️ Investigating what you actually have...",
+                "📸 Processing your culinary crime scene...",
+                "🤔 Figuring out what you've got to work with...",
+                "🧠 Reading your fridge like a book...",
+                "👨‍🔬 Running a full ingredient autopsy...",
+                "🫣 Looking... yep, that's a fridge alright...",
+                "🔬 Conducting a very official ingredient scan...",
+            ]
+            with st.spinner(random.choice(scan_phrases)):
                 ingredients = identify_ingredients(
                     st.session_state.image_bytes,
                     st.session_state.media_type,
