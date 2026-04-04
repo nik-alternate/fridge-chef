@@ -409,7 +409,7 @@ def recipe_stream(ingredients: list[str], mode: str, special_request: str = ""):
 col_logo, col_title = st.columns([1, 4])
 with col_logo:
     try:
-        st.image("logo.svg", width=110)
+        st.image("logo.png", width=110)
     except Exception:
         st.markdown("🍳")
 with col_title:
