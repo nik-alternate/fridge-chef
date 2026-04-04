@@ -408,7 +408,7 @@ def recipe_stream(ingredients: list[str], mode: str, special_request: str = ""):
             "- [ ] [item] — ~$[price]\n\n"
             "Keep it fun and make the food genuinely good."
         )
-    else:
+    elif mode == "alpha":
         protein = random.choice(ALPHA_PROTEINS)
         style = random.choice(ALPHA_STYLES)
         user_msg = (
